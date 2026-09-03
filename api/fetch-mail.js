@@ -1,15 +1,26 @@
 export default async function handler(req, res) {
-  // CORS Permissions (যাতে GitHub Pages থেকে এক্সেস করা যায়)
+  // CORS Permissions
+  res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
+  );
 
-  if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Only POST allowed' });
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  if (req.method !== 'POST') {
+    return res.status(405).json({ status: 'error', message: 'Only POST request allowed' });
+  }
 
   try {
-    const { full_data, mail_type } = req.body;
-    if (!full_data) return res.status(400).json({ status: 'error', message: '❌ ডাটা ফাঁকা হতে পারে না!' });
+    const { full_data, mail_type } = req.body || {};
+    if (!full_data) {
+      return res.status(400).json({ status: 'error', message: '❌ ডাটা ফাঁকা হতে পারে না!' });
+    }
 
     const parts = full_data.split('|').map(p => p.trim()).filter(Boolean);
     if (parts.length < 3) {
@@ -36,7 +47,7 @@ export default async function handler(req, res) {
 
       const tokenData = await tokenRes.json();
       if (!tokenData.access_token) {
-        return res.status(400).json({ status: 'error', message: '❌ মাইক্রোসফট রিফ্রেশ টোকেন ইনভ্যালিড!' });
+        return res.status(400).json({ status: 'error', message: `❌ মাইক্রোসফট টোকেন এরর: ${tokenData.error_description || 'ইনভ্যালিড রিফ্রেশ টোকেন'}` });
       }
 
       const mailRes = await fetch('https://graph.microsoft.com/v1.0/me/messages?$top=5', {
@@ -75,7 +86,7 @@ export default async function handler(req, res) {
 
       const tokenData = await tokenRes.json();
       if (!tokenData.access_token) {
-        return res.status(400).json({ status: 'error', message: '❌ গুগল রিফ্রেশ টোকেন রিজেক্টেড!' });
+        return res.status(400).json({ status: 'error', message: `❌ গুগল টোকেন এরর: ${tokenData.error_description || 'রিফ্রেশ টোকেন রিজেক্টেড'}` });
       }
 
       const listRes = await fetch('https://www.googleapis.com/gmail/v1/users/me/messages?maxResults=5', {
@@ -116,7 +127,7 @@ export default async function handler(req, res) {
     }
 
   } catch (err) {
-    return res.status(500).json({ status: 'error', message: `❌ এরর: ${err.message}` });
+    return res.status(500).json({ status: 'error', message: `❌ সার্ভার এরর: ${err.message}` });
   }
 }
 
