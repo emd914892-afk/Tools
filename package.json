@@ -1,0 +1,8 @@
+{
+  "name": "tools-backend",
+  "version": "1.0.0",
+  "main": "api/fetch-mail.js",
+  "dependencies": {
+    "node-fetch": "^3.3.2"
+  }
+}
