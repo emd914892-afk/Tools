@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>One Web Mail Shop</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-color: #f8fafc;
+            --subtext-color: #94a3b8;
+            --border-color: #334155;
+            --accent-color: #0ea5e9;
+            --accent-hover: #0284c7;
+            --highlight-color: #38bdf8;
+            --box-bg: #0f172a;
+            --drawer-bg: #1e293b;
+        }
+
+        [data-theme="light"] {
+            --bg-color: #f1f5f9;
+            --card-bg: #ffffff;
+            --text-color: #0f172a;
+            --subtext-color: #64748b;
+            --border-color: #cbd5e1;
+            --accent-color: #0284c7;
+            --accent-hover: #0369a1;
+            --highlight-color: #0284c7;
+            --box-bg: #f8fafc;
+            --drawer-bg: #ffffff;
+        }
+
+        body { 
+            font-family: Arial, sans-serif; 
+            background-color: var(--bg-color); 
+            margin: 0; 
+            padding: 15px; 
+            color: var(--text-color); 
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .top-navbar {
+            max-width: 480px;
+            margin: 0 auto 15px auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--card-bg);
+            padding: 10px 15px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            box-sizing: border-box;
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            font-size: 20px;
+            cursor: pointer;
+            padding: 5px 8px;
+            border-radius: 8px;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .icon-btn:hover { background: var(--border-color); }
+
+        .drawer-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1001;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .drawer-overlay.active { display: block; opacity: 1; }
+
+        .side-drawer {
+            position: fixed;
+            top: 0;
+            left: -280px;
+            width: 280px;
+            height: 100%;
+            background: var(--drawer-bg);
+            z-index: 1002;
+            transition: left 0.3s ease;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--border-color);
+        }
+
+        .side-drawer.open { left: 0; }
+
+        .drawer-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .drawer-title { font-weight: bold; font-size: 16px; color: var(--highlight-color); }
+
+        .drawer-menu { list-style: none; padding: 15px 0; margin: 0; }
+
+        .drawer-menu li a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px;
+            color: var(--text-color);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        .drawer-menu li a:hover, .drawer-menu li a.active {
+            background: var(--accent-color);
+            color: #ffffff;
+        }
+
+        .container { 
+            max-width: 480px; 
+            margin: 0 auto; 
+            background: var(--card-bg); 
+            padding: 20px; 
+            border-radius: 16px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2); 
+            border: 1px solid var(--border-color);
+            box-sizing: border-box;
+        }
+
+        h2 { text-align: center; color: var(--highlight-color); margin: 0 0 5px 0; font-size: 22px; font-weight: bold; }
+        .subtitle { text-align: center; font-size: 11px; color: var(--subtext-color); margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px; }
+        
+        .tab-container { display: flex; background: var(--box-bg); padding: 5px; border-radius: 10px; margin-bottom: 15px; border: 1px solid var(--border-color); }
+        .tab-btn { flex: 1; text-align: center; padding: 10px; cursor: pointer; font-weight: bold; font-size: 13px; border-radius: 8px; transition: 0.2s; color: var(--subtext-color); }
+        input[type="radio"] { display: none; }
+        input[type="radio"]:checked + .tab-btn { background: var(--accent-color); color: white; box-shadow: 0 2px 8px rgba(2,132,199,0.4); }
+
+        label.section-title { font-size: 11px; font-weight: bold; color: var(--subtext-color); display: block; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+        textarea { width: 100%; height: 75px; padding: 12px; border: 1px solid var(--border-color); border-radius: 10px; box-sizing: border-box; font-size: 13px; resize: none; background: var(--box-bg); color: var(--text-color); margin-bottom: 15px; }
+        
+        .email-display-box { display: flex; justify-content: space-between; align-items: center; background: var(--box-bg); color: var(--highlight-color); padding: 12px; border-radius: 10px; margin-bottom: 15px; font-weight: bold; font-size: 14px; border: 1px solid var(--border-color); }
+        .copy-email-btn { background: none; border: none; color: var(--highlight-color); cursor: pointer; font-size: 16px; }
+
+        .action-btn { width: 100%; background-color: var(--accent-color); color: white; border: none; padding: 14px; font-size: 16px; border-radius: 10px; cursor: pointer; font-weight: bold; transition: 0.2s; display: flex; justify-content: center; align-items: center; gap: 10px; text-transform: uppercase; letter-spacing: 1px; }
+        .action-btn:hover { background-color: var(--accent-hover); }
+        .action-btn:disabled { background-color: var(--border-color); color: var(--subtext-color); cursor: not-allowed; }
+        
+        .spinner { width: 18px; height: 18px; border: 3px solid var(--subtext-color); border-top-color: #ffffff; border-radius: 50%; display: none; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .code-display-section { background: var(--box-bg); border: 1px solid var(--border-color); padding: 15px; border-radius: 12px; text-align: center; margin-top: 20px; display: none; }
+        .code-label { font-size: 11px; font-weight: bold; color: var(--subtext-color); text-transform: uppercase; letter-spacing: 1px; }
+        .main-code { font-size: 38px; font-weight: bold; color: #22c55e; margin: 5px 0; letter-spacing: 1px; }
+        .code-actions { display: flex; justify-content: center; gap: 10px; margin-top: 10px; border-top: 1px solid var(--border-color); padding-top: 10px; }
+        .mini-btn { flex: 1; background: var(--card-bg); border: 1px solid var(--border-color); padding: 8px 10px; border-radius: 8px; font-size: 12px; font-weight: bold; color: var(--text-color); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; text-transform: uppercase; }
+        .mini-btn:hover { background: var(--border-color); }
+
+        .result-box { margin-top: 20px; }
+        .mail-card { background: var(--card-bg); border: 1px solid var(--border-color); padding: 15px; border-radius: 12px; margin-bottom: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .mail-card-id { font-size: 11px; color: var(--subtext-color); font-weight: bold; margin-bottom: 10px; display: flex; align-items: center; gap: 5px; }
+        .mail-sender-block { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+        .sender-icon { background: var(--box-bg); width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; border: 1px solid var(--border-color); }
+        .sender-info { display: flex; flex-direction: column; }
+        .sender-name { font-weight: bold; color: var(--text-color); font-size: 14px; }
+        .sender-email { font-size: 11px; color: var(--subtext-color); }
+        
+        .card-otp-box { display: flex; justify-content: space-between; align-items: center; background: var(--box-bg); padding: 12px 15px; border-radius: 8px; margin-bottom: 12px; border: 1px solid var(--border-color); }
+        .card-otp-text { font-size: 24px; font-weight: bold; color: var(--highlight-color); letter-spacing: 1px; }
+        .card-otp-copy { background: var(--border-color); border: 1px solid var(--border-color); color: var(--text-color); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold; }
+
+        .mail-subject { font-weight: bold; color: var(--text-color); font-size: 13px; margin-bottom: 4px; }
+        .mail-snippet { font-size: 12px; color: var(--subtext-color); line-height: 1.4; margin-bottom: 12px; }
+        
+        .mail-footer { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--subtext-color); border-top: 1px solid var(--border-color); padding-top: 10px; }
+        .view-btn { background: var(--box-bg); color: var(--text-color); border: 1px solid var(--border-color); padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 11px; font-weight: bold; display: flex; align-items: center; gap: 4px; text-transform: uppercase; }
+
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); align-items: flex-end; }
+        .modal-content { background-color: var(--card-bg); width: 100%; max-width: 480px; margin: 0 auto; border-top-left-radius: 16px; border-top-right-radius: 16px; padding: 20px; box-sizing: border-box; max-height: 85%; overflow-y: auto; animation: slideUp 0.3s ease-out; border-top: 1px solid var(--border-color); }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 15px; }
+        .modal-title { font-size: 15px; font-weight: bold; color: var(--highlight-color); display: flex; align-items: center; gap: 8px; }
+        .close-modal { font-size: 20px; color: var(--subtext-color); cursor: pointer; background: none; border: none; }
+        .modal-body-text { font-size: 13px; color: var(--text-color); line-height: 1.6; white-space: pre-line; }
+
+        .toast-copied { font-size: 11px; color: #22c55e; text-align: center; margin-top: -10px; margin-bottom: 10px; display: none; font-weight: bold; }
+        .error { color: #f87171; font-weight: bold; background: rgba(239, 68, 68, 0.1); padding: 12px; border-radius: 8px; font-size: 13px; border: 1px solid #ef4444; margin-top: 15px; text-align: center; }
+    </style>
+</head>
+<body>
+
+    <div class="top-navbar">
+        <button class="icon-btn" onclick="toggleDrawer()" title="Menu">☰</button>
+        <button class="icon-btn" id="themeToggleBtn" onclick="toggleTheme()" title="Toggle Theme">☀️</button>
+    </div>
+
+    <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+    <div class="side-drawer" id="sideDrawer">
+        <div class="drawer-header">
+            <span class="drawer-title">Navigation Menu</span>
+            <button class="icon-btn" onclick="closeDrawer()">✕</button>
+        </div>
+        <ul class="drawer-menu">
+            <li><a href="index.html" class="active">✉️ Mail Reader</a></li>
+            <li><a href="fa.html">🔑 2 FA Authentication</a></li>
+            <li><a href="tm.html">📧 Temp Mail</a></li>
+            <li><a href="fng.html">👤 Fake Name Generate</a></li>
+            <li><a href="fsg.html">🆔 Fake SSN Generate</a></li>
+        </ul>
+    </div>
+
+    <div class="container">
+        <h2>One Web Mail Shop</h2>
+        <div class="subtitle">Mail Extractor</div>
+        
+        <form id="mailForm">
+            <div class="tab-container">
+                <label style="flex: 1; margin: 0;">
+                    <input type="radio" name="mail_type" value="gmail" checked onchange="handleTabChange()">
+                    <div class="tab-btn">GMAIL MAIL</div>
+                </label>
+                <label style="flex: 1; margin: 0;">
+                    <input type="radio" name="mail_type" value="graph" onchange="handleTabChange()">
+                    <div class="tab-btn">GRAPH MAIL</div>
+                </label>
+            </div>
+
+            <label class="section-title">Enter Credentials</label>
+            <textarea name="full_data" id="fullData" placeholder="email|pass|refresh_token|client_id|client_secret" oninput="updateEmailDisplay()" required></textarea>
+            
+            <div class="email-display-box" id="emailBox" style="display:none;">
+                <span id="extractedEmail"></span>
+                <button type="button" class="copy-email-btn" onclick="copyText(document.getElementById('extractedEmail').innerText, this)">📋</button>
+            </div>
+            <div id="copyNotice" class="toast-copied">Copied!</div>
+            
+            <button type="button" id="submitBtn" class="action-btn" onclick="fetchMailData()">
+                <div class="spinner" id="btnSpinner"></div>
+                <span id="btnText">Get Code</span>
+            </button>
+        </form>
+
+        <div class="code-display-section" id="codeSection">
+            <div class="code-label">Latest Code:</div>
+            <div class="main-code" id="latestCode">-----</div>
+            <div class="code-actions">
+                <button class="mini-btn" id="copyCodeBtn">📋 Copy</button>
+                <button class="mini-btn" onclick="fetchMailData()">🔄 Refresh</button>
+                <button class="mini-btn" onclick="cleanAll()">🗑️ Clean</button>
+            </div>
+        </div>
+
+        <div id="result" class="result-box"></div>
+    </div>
+
+    <div id="emailModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">📩 Email View</div>
+                <button class="close-modal" onclick="closeModal()">✕</button>
+            </div>
+            <div class="modal-body-text" id="modalBodyText"></div>
+        </div>
+    </div>
+
+    <script>
+    let globalMailsList = [];
+    
+    // 🔥 আপনার Vercel App লিঙ্কটি এখানে দিন
+    const VERCEL_API_URL = "https://tools-delta-smoky.vercel.app/api/fetch-mail";
+
+    function toggleTheme() {
+        const currentTheme = document.documentElement.getAttribute("data-theme");
+        const newTheme = currentTheme === "light" ? "dark" : "light";
+        document.documentElement.setAttribute("data-theme", newTheme);
+        localStorage.setItem("theme", newTheme);
+        document.getElementById("themeToggleBtn").innerText = newTheme === "light" ? "🌙" : "☀️";
+    }
+
+    const savedTheme = localStorage.getItem("theme") || "dark";
+    document.documentElement.setAttribute("data-theme", savedTheme);
+
+    function toggleDrawer() {
+        document.getElementById('sideDrawer').classList.add('open');
+        document.getElementById('drawerOverlay').classList.add('active');
+    }
+
+    function closeDrawer() {
+        document.getElementById('sideDrawer').classList.remove('open');
+        document.getElementById('drawerOverlay').classList.remove('active');
+    }
+
+    function handleTabChange() {
+        let mailType = document.querySelector('input[name="mail_type"]:checked').value;
+        let textarea = document.getElementById('fullData');
+        textarea.placeholder = mailType === "gmail" ? "email|pass|refresh_token|client_id|client_secret" : "email|pass|refresh_token|client_id";
+        updateEmailDisplay();
+    }
+
+    function updateEmailDisplay() {
+        let fullData = document.getElementById('fullData').value.trim();
+        let emailBox = document.getElementById('emailBox');
+        let extractedEmail = document.getElementById('extractedEmail');
+        if (fullData.length > 0) {
+            let email = fullData.split('|')[0].trim();
+            extractedEmail.innerText = email;
+            emailBox.style.display = "flex";
+        } else {
+            emailBox.style.display = "none";
+        }
+    }
+
+    function fetchMailData() {
+        let fullData = document.getElementById('fullData').value.trim();
+        let mailType = document.querySelector('input[name="mail_type"]:checked').value;
+        
+        let btn = document.getElementById('submitBtn');
+        let spinner = document.getElementById('btnSpinner');
+        let btnText = document.getElementById('btnText');
+        let codeSection = document.getElementById('codeSection');
+        let latestCode = document.getElementById('latestCode');
+        let resultDiv = document.getElementById('result');
+        
+        btn.disabled = true;
+        spinner.style.display = "block";
+        btnText.innerText = "Please wait...";
+        resultDiv.innerHTML = "";
+        
+        fetch(VERCEL_API_URL, { 
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ full_data: fullData, mail_type: mailType }) 
+        })
+        .then(response => response.json())
+        .then(data => {
+            btn.disabled = false;
+            spinner.style.display = "none";
+            btnText.innerText = "Get Code";
+            
+            if (data.status === "success") {
+                globalMailsList = data.mails;
+                latestCode.innerText = data.latest_code;
+                codeSection.style.display = "block";
+                
+                document.getElementById('copyCodeBtn').onclick = function(e) {
+                    copyText(data.latest_code, e.target);
+                };
+                
+                let cardsHtml = "";
+                data.mails.forEach((mail, index) => {
+                    let singleOtp = extractIndividualOtp(mail.subject + " " + mail.body);
+                    cardsHtml += `
+                    <div class="mail-card">
+                        <div class="mail-card-id">▶ ID 00${index+1}</div>
+                        <div class="mail-sender-block">
+                            <div class="sender-icon">✉</div>
+                            <div class="sender-info">
+                                <span class="sender-name">${mail.sender.split('<')[0].trim()}</span>
+                                <span class="sender-email">${mail.sender}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="card-otp-box">
+                            <span class="card-otp-text">${singleOtp}</span>
+                            <button class="card-otp-copy" onclick="copyText('${singleOtp}', this)">📋 COPY</button>
+                        </div>
+
+                        <div class="mail-subject">${mail.subject}</div>
+                        <div class="mail-snippet">${mail.body}</div>
+                        
+                        <div class="mail-footer">
+                            <span>${mail.date}</span>
+                            <button class="view-btn" onclick="openModal(${index})">🔍 View</button>
+                        </div>
+                    </div>`;
+                });
+                resultDiv.innerHTML = cardsHtml;
+            } else {
+                codeSection.style.display = "none";
+                resultDiv.innerHTML = `<div class="error">${data.message}</div>`;
+            }
+        })
+        .catch(err => {
+            btn.disabled = false;
+            spinner.style.display = "none";
+            btnText.innerText = "Get Code";
+            codeSection.style.display = "none";
+            resultDiv.innerHTML = '<div class="error">❌ নেটওয়ার্ক কানেকশন বা Vercel API এরর!</div>';
+        });
+    }
+
+    function extractIndividualOtp(text) {
+        let match = text.match(/(?:code|otp|verification|verify)[^\d]*(\b\d{4,8}\b)/i);
+        if (match) return match[1];
+        let all = text.match(/\b\d{4,8}\b/g);
+        if (all) {
+            for (let n of all) { if (!["2024","2025","2026"].includes(n)) return n; }
+        }
+        return "-----";
+    }
+
+    function openModal(index) {
+        if(globalMailsList[index]) {
+            document.getElementById('modalBodyText').innerText = globalMailsList[index].body;
+            document.getElementById('emailModal').style.display = "flex";
+        }
+    }
+
+    function closeModal() {
+        document.getElementById('emailModal').style.display = "none";
+    }
+
+    function cleanAll() {
+        document.getElementById('fullData').value = "";
+        document.getElementById('latestCode').innerText = "-----";
+        document.getElementById('codeSection').style.display = "none";
+        document.getElementById('result').innerHTML = "";
+        document.getElementById('emailBox').style.display = "none";
+        globalMailsList = [];
+    }
+
+    function copyText(text, element) {
+        navigator.clipboard.writeText(text).then(() => {
+            showCopyFeedback(element);
+        }).catch(() => {
+            let dummy = document.createElement("textarea");
+            document.body.appendChild(dummy);
+            dummy.value = text;
+            dummy.select();
+            document.execCommand("copy");
+            document.body.removeChild(dummy);
+            showCopyFeedback(element);
+        });
+    }
+
+    function showCopyFeedback(element) {
+        if (!element) return;
+        let originalText = element.innerHTML;
+        if (element.tagName === "BUTTON") {
+            element.innerHTML = "✓ Copied";
+            setTimeout(() => { element.innerHTML = originalText; }, 2000);
+        } else {
+            let notice = document.getElementById("copyNotice");
+            notice.style.display = "block";
+            setTimeout(() => { notice.style.display = "none"; }, 2000);
+        }
+    }
+
+    window.onclick = function(event) {
+        let modal = document.getElementById('emailModal');
+        if (event.target == modal) { modal.style.display = "none"; }
+    }
+
+    window.onload = function() {
+        handleTabChange();
+        document.getElementById("themeToggleBtn").innerText = savedTheme === "light" ? "🌙" : "☀️";
+    };
+    </script>
+</body>
+</html>
