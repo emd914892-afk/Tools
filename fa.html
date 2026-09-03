@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2FA Authentication - One Web Mail Shop</title>
+    <!-- OTPAuth Library CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/otpauth/9.1.4/otpauth.umd.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-color: #f8fafc;
+            --subtext-color: #94a3b8;
+            --border-color: #334155;
+            --accent-color: #0ea5e9;
+            --accent-hover: #0284c7;
+            --highlight-color: #38bdf8;
+            --box-bg: #0f172a;
+            --drawer-bg: #1e293b;
+        }
+
+        [data-theme="light"] {
+            --bg-color: #f1f5f9;
+            --card-bg: #ffffff;
+            --text-color: #0f172a;
+            --subtext-color: #64748b;
+            --border-color: #cbd5e1;
+            --accent-color: #0284c7;
+            --accent-hover: #0369a1;
+            --highlight-color: #0284c7;
+            --box-bg: #f8fafc;
+            --drawer-bg: #ffffff;
+        }
+
+        body { 
+            font-family: Arial, sans-serif; 
+            background-color: var(--bg-color); 
+            margin: 0; 
+            padding: 15px; 
+            color: var(--text-color); 
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .top-navbar {
+            max-width: 480px;
+            margin: 0 auto 15px auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--card-bg);
+            padding: 10px 15px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            box-sizing: border-box;
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            font-size: 20px;
+            cursor: pointer;
+            padding: 5px 8px;
+            border-radius: 8px;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .icon-btn:hover { background: var(--border-color); }
+
+        .drawer-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1001;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .drawer-overlay.active { display: block; opacity: 1; }
+
+        .side-drawer {
+            position: fixed;
+            top: 0;
+            left: -280px;
+            width: 280px;
+            height: 100%;
+            background: var(--drawer-bg);
+            z-index: 1002;
+            transition: left 0.3s ease;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--border-color);
+        }
+
+        .side-drawer.open { left: 0; }
+
+        .drawer-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .drawer-title { font-weight: bold; font-size: 16px; color: var(--highlight-color); }
+
+        .drawer-menu { list-style: none; padding: 15px 0; margin: 0; }
+
+        .drawer-menu li a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px;
+            color: var(--text-color);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        .drawer-menu li a:hover, .drawer-menu li a.active {
+            background: var(--accent-color);
+            color: #ffffff;
+        }
+
+        .container { 
+            max-width: 480px; 
+            margin: 0 auto; 
+            background: var(--card-bg); 
+            padding: 20px; 
+            border-radius: 16px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2); 
+            border: 1px solid var(--border-color);
+            box-sizing: border-box;
+        }
+
+        h2 { text-align: center; color: var(--highlight-color); margin: 0 0 5px 0; font-size: 22px; font-weight: bold; }
+        .subtitle { text-align: center; font-size: 11px; color: var(--subtext-color); margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px; }
+
+        label.section-title { font-size: 11px; font-weight: bold; color: var(--subtext-color); display: block; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        .input-group {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .input-group input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            background: var(--box-bg);
+            color: var(--text-color);
+            font-size: 13px;
+            outline: none;
+        }
+
+        .input-group input:focus {
+            border-color: var(--accent-color);
+        }
+
+        .action-btn { 
+            background-color: var(--accent-color); 
+            color: white; 
+            border: none; 
+            padding: 12px 18px; 
+            font-size: 13px; 
+            border-radius: 10px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            transition: 0.2s; 
+            white-space: nowrap;
+            text-transform: uppercase;
+        }
+
+        .action-btn:hover { background-color: var(--accent-hover); }
+
+        .code-display-section { 
+            background: var(--box-bg); 
+            border: 1px solid var(--border-color); 
+            padding: 15px; 
+            border-radius: 12px; 
+            text-align: center; 
+            margin-top: 15px; 
+            display: none; 
+        }
+
+        .code-clean-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .main-code { 
+            font-size: 36px; 
+            font-weight: bold; 
+            color: #22c55e; 
+            letter-spacing: 2px;
+            cursor: pointer;
+            background: var(--card-bg);
+            padding: 6px 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            user-select: none;
+        }
+
+        .main-code:hover {
+            border-color: var(--accent-color);
+        }
+
+        .clean-btn {
+            background-color: #ef4444;
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        .clean-btn:hover {
+            background-color: #dc2626;
+        }
+
+        .divider {
+            border: none;
+            border-top: 1px solid var(--border-color);
+            margin: 15px 0;
+        }
+
+        .progress-container {
+            width: 100%;
+            background-color: var(--border-color);
+            height: 6px;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 100%;
+            background-color: var(--accent-color);
+            transition: width 1s linear;
+        }
+
+        .timer-text {
+            font-size: 12px;
+            color: var(--subtext-color);
+        }
+
+        .toast-copied { 
+            font-size: 11px; 
+            color: #22c55e; 
+            text-align: center; 
+            margin-top: 8px; 
+            display: none; 
+            font-weight: bold; 
+        }
+    </style>
+</head>
+<body>
+
+    <div class="top-navbar">
+        <button class="icon-btn" onclick="toggleDrawer()" title="Menu">☰</button>
+        <button class="icon-btn" id="themeToggleBtn" onclick="toggleTheme()" title="Toggle Theme">☀️</button>
+    </div>
+
+    <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+    <div class="side-drawer" id="sideDrawer">
+        <div class="drawer-header">
+            <span class="drawer-title">Navigation Menu</span>
+            <button class="icon-btn" onclick="closeDrawer()">✕</button>
+        </div>
+        <ul class="drawer-menu">
+            <li><a href="index.html">✉️ Mail Reader</a></li>
+            <li><a href="fa.html" class="active">🔑 2 FA Authentication</a></li>
+            <li><a href="tm.html">📧 Temp Mail</a></li>
+            <li><a href="fng.html">👤 Fake Name Generate</a></li>
+            <li><a href="fsg.html">🆔 Fake SSN Generate</a></li>
+        </ul>
+    </div>
+
+    <div class="container">
+        <h2>2 FA Authentication Key</h2>
+        <div class="subtitle">TOTP Code Generator</div>
+
+        <label class="section-title">Enter Secret Key</label>
+        <div class="input-group">
+            <input type="text" id="secretKey" placeholder="Paste 2FA Secret Key here...">
+            <button class="action-btn" onclick="generateOTP()">Get Code</button>
+        </div>
+
+        <div class="code-display-section" id="codeSection">
+            <div class="code-clean-row">
+                <div class="main-code" onclick="copyCode()" title="Click to copy">
+                    <span id="otpCode">------</span>
+                </div>
+                <button class="clean-btn" onclick="cleanAll()">Clean</button>
+            </div>
+
+            <hr class="divider">
+
+            <div class="progress-container">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            <div class="timer-text">Refreshes in <span id="timerText">15</span> seconds</div>
+            
+            <div id="copyNotice" class="toast-copied">Copied to clipboard!</div>
+        </div>
+    </div>
+
+    <script>
+    let timerInterval = null;
+    let currentTotp = null;
+
+    function toggleTheme() {
+        const currentTheme = document.documentElement.getAttribute("data-theme");
+        const newTheme = currentTheme === "light" ? "dark" : "light";
+        document.documentElement.setAttribute("data-theme", newTheme);
+        localStorage.setItem("theme", newTheme);
+        document.getElementById("themeToggleBtn").innerText = newTheme === "light" ? "🌙" : "☀️";
+    }
+
+    const savedTheme = localStorage.getItem("theme") || "dark";
+    document.documentElement.setAttribute("data-theme", savedTheme);
+
+    function toggleDrawer() {
+        document.getElementById('sideDrawer').classList.add('open');
+        document.getElementById('drawerOverlay').classList.add('active');
+    }
+
+    function closeDrawer() {
+        document.getElementById('sideDrawer').classList.remove('open');
+        document.getElementById('drawerOverlay').classList.remove('active');
+    }
+
+    function generateOTP() {
+        const secretInput = document.getElementById("secretKey").value.trim().replace(/\s+/g, '').toUpperCase();
+
+        if (!secretInput) {
+            alert("Please paste a valid Secret Key first!");
+            return;
+        }
+
+        try {
+            currentTotp = new OTPAuth.TOTP({
+                issuer: "2FA",
+                label: "User",
+                algorithm: "SHA1",
+                digits: 6,
+                period: 15,
+                secret: OTPAuth.Secret.fromBase32(secretInput)
+            });
+
+            document.getElementById("codeSection").style.display = "block";
+
+            function updateOTP() {
+                const code = currentTotp.generate();
+                document.getElementById("otpCode").innerText = code;
+
+                const now = Math.floor(Date.now() / 1000);
+                const secondsLeft = 15 - (now % 15);
+                
+                document.getElementById("timerText").innerText = secondsLeft;
+                const percentage = (secondsLeft / 15) * 100;
+                document.getElementById("progressBar").style.width = percentage + "%";
+            }
+
+            if (timerInterval) clearInterval(timerInterval);
+            updateOTP();
+            timerInterval = setInterval(updateOTP, 1000);
+
+        } catch (error) {
+            alert("Invalid Secret Key format! Make sure it is Base32.");
+        }
+    }
+
+    function copyCode() {
+        const codeText = document.getElementById("otpCode").innerText;
+        if (codeText === "------" || !codeText) return;
+
+        navigator.clipboard.writeText(codeText).then(() => {
+            showCopyNotice();
+        }).catch(() => {
+            let dummy = document.createElement("textarea");
+            document.body.appendChild(dummy);
+            dummy.value = codeText;
+            dummy.select();
+            document.execCommand("copy");
+            document.body.removeChild(dummy);
+            showCopyNotice();
+        });
+    }
+
+    function showCopyNotice() {
+        let notice = document.getElementById("copyNotice");
+        notice.style.display = "block";
+        setTimeout(() => { notice.style.display = "none"; }, 2000);
+    }
+
+    function cleanAll() {
+        if (timerInterval) clearInterval(timerInterval);
+        document.getElementById("secretKey").value = "";
+        document.getElementById("otpCode").innerText = "------";
+        document.getElementById("codeSection").style.display = "none";
+        document.getElementById("progressBar").style.width = "100%";
+        currentTotp = null;
+    }
+
+    window.onload = function() {
+        document.getElementById("themeToggleBtn").innerText = savedTheme === "light" ? "🌙" : "☀️";
+    };
+    </script>
+</body>
+</html>

@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fake Name Generator - One Web Mail Shop</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-color: #f8fafc;
+            --subtext-color: #94a3b8;
+            --border-color: #334155;
+            --accent-color: #0ea5e9;
+            --accent-hover: #0284c7;
+            --highlight-color: #38bdf8;
+            --box-bg: #0f172a;
+            --drawer-bg: #1e293b;
+        }
+
+        [data-theme="light"] {
+            --bg-color: #f1f5f9;
+            --card-bg: #ffffff;
+            --text-color: #0f172a;
+            --subtext-color: #64748b;
+            --border-color: #cbd5e1;
+            --accent-color: #0284c7;
+            --accent-hover: #0369a1;
+            --highlight-color: #0284c7;
+            --box-bg: #f8fafc;
+            --drawer-bg: #ffffff;
+        }
+
+        body { 
+            font-family: Arial, sans-serif; 
+            background-color: var(--bg-color); 
+            margin: 0; 
+            padding: 15px; 
+            color: var(--text-color); 
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .top-navbar {
+            max-width: 480px;
+            margin: 0 auto 15px auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--card-bg);
+            padding: 10px 15px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            box-sizing: border-box;
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            font-size: 20px;
+            cursor: pointer;
+            padding: 5px 8px;
+            border-radius: 8px;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .icon-btn:hover { background: var(--border-color); }
+
+        .drawer-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1001;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .drawer-overlay.active { display: block; opacity: 1; }
+
+        .side-drawer {
+            position: fixed;
+            top: 0;
+            left: -280px;
+            width: 280px;
+            height: 100%;
+            background: var(--drawer-bg);
+            z-index: 1002;
+            transition: left 0.3s ease;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--border-color);
+        }
+
+        .side-drawer.open { left: 0; }
+
+        .drawer-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .drawer-title { font-weight: bold; font-size: 16px; color: var(--highlight-color); }
+
+        .drawer-menu { list-style: none; padding: 15px 0; margin: 0; }
+
+        .drawer-menu li a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px;
+            color: var(--text-color);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        .drawer-menu li a:hover, .drawer-menu li a.active {
+            background: var(--accent-color);
+            color: #ffffff;
+        }
+
+        .container { 
+            max-width: 480px; 
+            margin: 0 auto; 
+            background: var(--card-bg); 
+            padding: 20px; 
+            border-radius: 16px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2); 
+            border: 1px solid var(--border-color);
+            box-sizing: border-box;
+        }
+
+        h2 { text-align: center; color: var(--highlight-color); margin: 0 0 5px 0; font-size: 22px; font-weight: bold; }
+        .subtitle { text-align: center; font-size: 11px; color: var(--subtext-color); margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px; }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            background: var(--box-bg);
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 15px;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--text-color);
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .checkbox-label input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--accent-color);
+            cursor: pointer;
+        }
+
+        .select-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        select {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            background: var(--box-bg);
+            color: var(--text-color);
+            font-size: 13px;
+            outline: none;
+        }
+
+        .action-btn { 
+            width: 100%;
+            background-color: var(--accent-color); 
+            color: white; 
+            border: none; 
+            padding: 14px; 
+            font-size: 14px; 
+            border-radius: 10px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            transition: 0.2s; 
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+        }
+
+        .action-btn:hover { background-color: var(--accent-hover); }
+
+        .result-box {
+            background: var(--box-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            display: none;
+        }
+
+        .generated-name-text {
+            font-size: 20px;
+            font-weight: bold;
+            color: #22c55e;
+            margin-bottom: 12px;
+            word-break: break-word;
+        }
+
+        .copy-main-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--highlight-color);
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .toast-copied { 
+            font-size: 11px; 
+            color: #22c55e; 
+            text-align: center; 
+            margin-top: 10px; 
+            display: none; 
+            font-weight: bold; 
+        }
+    </style>
+</head>
+<body>
+
+    <div class="top-navbar">
+        <button class="icon-btn" onclick="toggleDrawer()" title="Menu">☰</button>
+        <button class="icon-btn" id="themeToggleBtn" onclick="toggleTheme()" title="Toggle Theme">☀️</button>
+    </div>
+
+    <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+    <div class="side-drawer" id="sideDrawer">
+        <div class="drawer-header">
+            <span class="drawer-title">Navigation Menu</span>
+            <button class="icon-btn" onclick="closeDrawer()">✕</button>
+        </div>
+        <ul class="drawer-menu">
+            <li><a href="index.html">✉️ Mail Reader</a></li>
+            <li><a href="fa.html">🔑 2 FA Authentication</a></li>
+            <li><a href="tm.html">📧 Temp Mail</a></li>
+            <li><a href="fng.html" class="active">👤 Fake Name Generate</a></li>
+            <li><a href="fsg.html">🆔 Fake SSN Generate</a></li>
+        </ul>
+    </div>
+
+    <div class="container">
+        <h2>Fake Name Generator</h2>
+        <div class="subtitle">Custom Name Generator</div>
+
+        <!-- Options Checkboxes -->
+        <div class="options-grid">
+            <label class="checkbox-label">
+                <input type="checkbox" id="chkName"> Name
+            </label>
+            <label class="checkbox-label">
+                <input type="checkbox" id="chkFullName" checked> Full Name
+            </label>
+            <label class="checkbox-label">
+                <input type="checkbox" id="chkNickname"> Nickname
+            </label>
+            <label class="checkbox-label">
+                <input type="checkbox" id="chkGender"> Gender
+            </label>
+        </div>
+
+        <!-- Select Controls -->
+        <div class="select-group">
+            <select id="genderSelect">
+                <option value="random">Random Gender</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+            </select>
+            <select id="countrySelect">
+                <option value="US">USA 🇺🇸</option>
+                <option value="FR">France 🇫🇷</option>
+                <option value="VN">Vietnam 🇻🇳</option>
+                <option value="BD">Bangladesh 🇧🇩</option>
+                <option value="CN">China 🇨🇳</option>
+                <option value="IN">India 🇮🇳</option>
+                <option value="UK">United Kingdom 🇬🇧</option>
+                <option value="RU">Russia 🇷🇺</option>
+                <option value="SA">Saudi Arabia 🇸🇦</option>
+                <option value="DE">Germany 🇩🇪</option>
+            </select>
+        </div>
+
+        <button class="action-btn" onclick="generateCustomName()">Generate Name</button>
+
+        <div class="result-box" id="resultBox">
+            <div class="generated-name-text" id="resultName">---</div>
+            <button class="copy-main-btn" onclick="copyName()">📋 Copy Name</button>
+        </div>
+
+        <div id="copyNotice" class="toast-copied">Copied to clipboard!</div>
+    </div>
+
+    <script>
+    // Extensive Database for 10 Countries
+    const countryData = {
+        US: {
+            maleFirst: ["James", "John", "Robert", "Michael", "William", "David", "Richard", "Joseph", "Thomas", "Charles", "Christopher", "Daniel", "Matthew", "Anthony", "Donald", "Mark", "Paul", "Steven", "Andrew", "Joshua"],
+            femaleFirst: ["Mary", "Patricia", "Jennifer", "Linda", "Elizabeth", "Barbara", "Susan", "Jessica", "Sarah", "Karen", "Lisa", "Nancy", "Betty", "Margaret", "Sandra", "Ashley", "Kimberly", "Emily", "Donna", "Michelle"],
+            last: ["Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis", "Rodriguez", "Martinez", "Hernandez", "Lopez", "Gonzalez", "Wilson", "Anderson", "Thomas", "Taylor", "Moore", "Jackson", "Martin"],
+            nick: ["Johnny", "Mike", "Dave", "Rob", "Sam", "Chris", "Dan", "Matt", "Tony", "Andy"]
+        },
+        FR: {
+            maleFirst: ["Gabriel", "Léo", "Louis", "Lucas", "Hugo", "Arthur", "Jules", "Maël", "Liam", "Ethan", "Paul", "Nathan", "Sacha", "Tom", "Theo", "Antoine", "Mathieu", "Nicolas", "Julien", "Alexandre"],
+            femaleFirst: ["Jade", "Louise", "Emma", "Alice", "Chloé", "Lina", "Léa", "Rose", "Anna", "Mila", "Inès", "Mia", "Manon", "Camille", "Clara", "Sarah", "Océane", "Lucie", "Charlotte", "Marie"],
+            last: ["Martin", "Bernard", "Thomas", "Petit", "Robert", "Richard", "Durand", "Dubois", "Moreau", "Laurent", "Simon", "Michel", "Lefebvre", "Leroy", "Roux", "David", "Bertrand", "Morel", "Fournier", "Girard"],
+            nick: ["Gabi", "Loulou", "Lulu", "Huggy", "Jady", "Titi", "Nico", "Alex", "Math", "Toine"]
+        },
+        VN: {
+            maleFirst: ["Minh", "Hùng", "Dũng", "Tuấn", "Khang", "Bảo", "Long", "Nam", "Huy", "Thắng", "Phúc", "Đạt", "Lộc", "Khánh", "Việt", "Phương", "Hải", "Lâm", "Đức", "Tùng"],
+            femaleFirst: ["Hoa", "Linh", "Trang", "Mai", "Lan", "Hương", "Phương", "Thảo", "Nhung", "Yến", "Thủy", "Hà", "Ngọc", "Thư", "Châu", "Vy", "Hạnh", "Đào", "Tú", "Anh"],
+            last: ["Nguyễn", "Trần", "Lê", "Phạm", "Hoàng", "Huỳnh", "Vũ", "Võ", "Đặng", "Bùi", "Đỗ", "Hồ", "Ngô", "Dương", "Lý"],
+            nick: ["Búp", "Tèo", "Tí", "Sóc", "Gấu", "Mít", "Tin", "Na", "Bé", "Nhím"]
+        },
+        BD: {
+            maleFirst: ["আরিফ", "তানভীর", "রাকিব", "সাকিব", "রিমেল", "হাসান", "ফাহিম", "সাব্বির", "মাহমুদ", "নাহিদ", "ইমরান", "হৃদয়", "সোহেল", "ফারহান", "কামরুল", "মেহেদী", "জাহিদ", "আসিফ", "শাহিন", "তৌহিদ"],
+            femaleFirst: ["নুসরাত", "আফরিন", "ফাতেমা", "সাদিয়া", "মীম", "জান্নাত", "তাসনিম", "সানজিদা", "রিয়া", "ফারজানা", "সুমাইয়া", "শারমিন", "মরিয়ম", "নাজমুন", "আফরোজা", "জেসমিন", "রুমানা", "লাবনী", "তাহমিনা", "ইসরাত"],
+            last: ["হাসান", "চৌধুরী", "ইসলাম", "রহমান", "খান", "আহমেদ", "হোসেন", "আলী", "মোল্লা", "শেখ", "শিকদার", "কাজী", "মিয়া", "মন্ডল", "আকন্দ"],
+            nick: ["শুভ", "বাবু", "রাতু", "নীল", "অভি", "শান্ত", "রাজু", "মিটু", "বাপ্পি", "লিটন"]
+        },
+        CN: {
+            maleFirst: ["伟", "强", "磊", "洋", "勇", "军", "杰", "涛", "超", "明", "浩", "辉", "刚", "健", "鹏", "波", "辉", "鑫", "波", "斌"],
+            femaleFirst: ["芳", "秀英", "敏", "静", "丽", "强", "静", "娟", "艳", "新", "燕", "杰", "华", "洁", "红", "玲", "丹", "萍", "萍", "瑞"],
+            last: ["王", "李", "张", "刘", "陈", "杨", "黄", "赵", "吴", "周", "徐", "孙", "马", "朱", "胡", "郭", "何", "高", "林", "罗"],
+            nick: ["小明", "阿杰", "宝儿", "小宝", "嘟嘟", "天天", "阳阳", "乐乐", "飞飞", "小龙"]
+        },
+        IN: {
+            maleFirst: ["राहुल", "अमित", "रोहन", "विक्रम", "आदित्य", "अभिषेक", "संजय", "दीपक", "राजेश", "सुनील", "अनिल", "राजीव", "अजय", "मनोज", "संदीप", "विजय", "आलोक", "राकेश", "अरुण", "पंकज"],
+            femaleFirst: ["प्रिया", "पूजा", "नेहा", "अंजलि", "स्नेहा", "सुनीता", "अनीता", "गीता", "सीमा", "रेखा", "सुषमा", "कविता", "आरती", "ममता", "संगीता", "पूनम", "पिंकी", "दीपा", "शोभा", "रेनू"],
+            last: ["शर्मा", "वर्मा", "गुप्ता", "सिंह", "कुमार", "पाटिल", "जोशी", "पांडे", "मिश्रा", "यादव", "रेड्डी", "चौहान", "शाह", "मेहता", "अग्रवाल"],
+            nick: ["सोनू", "मोनू", "गोलू", "छोटू", "रॉकी", "राजू", "गुड्डू", "बंटी", "चिंटू", "पप्पू"]
+        },
+        UK: {
+            maleFirst: ["George", "Oliver", "Harry", "Jack", "Jacob", "Charley", "Thomas", "Alfie", "William", "Joshua", "James", "Archie", "Arthur", "Logan", "Alexander", "James", "Edward", "Harrison", "Ethan", "Samuel"],
+            femaleFirst: ["Olivia", "Amelia", "Emily", "Isla", "Ava", "Ella", "Jessica", "Poppy", "Mia", "Sophie", "Grace", "Lily", "Evie", "Charlotte", "Scarlett", "Daisy", "Freya", "Florence", "Alice", "Phoebe"],
+            last: ["Smith", "Jones", "Taylor", "Williams", "Brown", "Davies", "Evans", "Wilson", "Thomas", "Roberts", "Johnson", "Lewis", "Walker", "Robinson", "Wood", "Thompson", "Wright", "White", "Watson", "Jackson"],
+            nick: ["Ollie", "Jacko", "Tom", "Will", "Archie", "Alf", "Harry", "Ted", "Ben", "Charlie"]
+        },
+        RU: {
+            maleFirst: ["Александр", "Сергей", "Дмитрий", "Андрей", "Алексей", "Максим", "Евгений", "Иван", "Михаил", "Артем", "Владимир", "Павел", "Николай", "Денис", "Игорь", "Роман", "Олег", "Антон", "Виталий", "Юрий"],
+            femaleFirst: ["Елена", "Ольга", "Наталья", "Екатерина", "Анना", "Татьяна", "Ирина", "Мария", "Светлана", "Юлия", "Анастасия", "Оксана", "Ксения", "Надежда", "Виктория", "Евгения", "Дарья", "Алена", "Марина", "Полина"],
+            last: ["Иванов", "Смирнов", "Кузнецов", "Попов", "Васильев", "Петров", "Соколов", "Михайлов", "Новиков", "Федоров", "Морозов", "Волков", "Алексеев", "Лебедев", "Семенов", "Егоров", "Павлов", "Козлов", "Stepanov", "Николаев"],
+            nick: ["Саша", "Серёжа", "Дима", "Лёша", "Макс", "Женя", "Миша", "Володя", "Паша", "Коля"]
+        },
+        SA: {
+            maleFirst: ["محمد", "عبدالله", "أحمد", "علي", "عمر", "خالد", "فهد", "سعود", "عبدالرحمن", "إبراهيم", "حسين", "سلمان", "فيصل", "يوسف", "حسن", "ماجد", "سلطان", "طارق", "نايف", "زياد"],
+            femaleFirst: ["فاطمة", "مريم", "عائشة", "نورة", "سارة", "منيرة", "أمل", "ريم", "هند", "لطيفة", "منى", "أروى", "نجود", "دانة", "شهد", "خلود", "عبير", "العنود", "وفاء", "هيا"],
+            last: ["الغامدي", "الزهراني", "القحطاني", "العتيبي", "الشهري", "الدوسري", "الحربي", "المطيري", "الإنصاري", "الشمري", "المالكي", "العنزي", "الرشيدي", "البقمي", "السبيعي"],
+            nick: ["حمودي", "عبودي", "أبو فهد", "أبو علي", "ميمي", "سوسو", "توتا", "نوشة", "فوفو", "لومي"]
+        },
+        DE: {
+            maleFirst: ["Lukas", "Leon", "Finn", "Jonas", "Felix", "Ben", "Paul", "Maximilian", "Henry", "Elias", "Noah", "Tim", "Julian", "Philipp", "Moritz", "Jan", "Niklas", "David", "Tom", "Sven"],
+            femaleFirst: ["Emma", "Mia", "Hannah", "Sofia", "Lina", "Anna", "Lea", "Emely", "Marie", "Lena", "Laura", "Lara", "Johanna", "Nele", "SOPHIE", "Clara", "Lilly", "Luisa", "Charlotte", "Amelie"],
+            last: ["Müller", "Schmidt", "Schneider", "Fischer", "Weber", "Meyer", "Wagner", "Becker", "Schulz", "Hoffmann", "Schäfer", "Koch", "Bauer", "Richter", "Klein", "Wolf", "Schröder", "Neumann", "Schwarz", "Zimmermann"],
+            nick: ["Luki", "Leo", "Finny", "Joni", "Lixi", "Benni", "Pauli", "Maxi", "Timmy", "Juli"]
+        }
+    };
+
+    function toggleTheme() {
+        const currentTheme = document.documentElement.getAttribute("data-theme");
+        const newTheme = currentTheme === "light" ? "dark" : "light";
+        document.documentElement.setAttribute("data-theme", newTheme);
+        localStorage.setItem("theme", newTheme);
+        document.getElementById("themeToggleBtn").innerText = newTheme === "light" ? "🌙" : "☀️";
+    }
+
+    const savedTheme = localStorage.getItem("theme") || "dark";
+    document.documentElement.setAttribute("data-theme", savedTheme);
+
+    function toggleDrawer() {
+        document.getElementById('sideDrawer').classList.add('open');
+        document.getElementById('drawerOverlay').classList.add('active');
+    }
+
+    function closeDrawer() {
+        document.getElementById('sideDrawer').classList.remove('open');
+        document.getElementById('drawerOverlay').classList.remove('active');
+    }
+
+    function getRandomItem(arr) {
+        return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    function generateCustomName() {
+        const chkName = document.getElementById("chkName").checked;
+        const chkFullName = document.getElementById("chkFullName").checked;
+        const chkNickname = document.getElementById("chkNickname").checked;
+        const chkGender = document.getElementById("chkGender").checked;
+
+        if (!chkName && !chkFullName && !chkNickname && !chkGender) {
+            alert("অনুগ্রহ করে অন্তত যেকোনো একটি অপশনে টিক দিন!");
+            return;
+        }
+
+        const country = document.getElementById("countrySelect").value;
+        const data = countryData[country] || countryData.US;
+
+        let genderSelect = document.getElementById("genderSelect").value;
+        let selectedGender = genderSelect;
+        if (genderSelect === "random") {
+            selectedGender = Math.random() > 0.5 ? "male" : "female";
+        }
+
+        let firstName = selectedGender === "male" ? getRandomItem(data.maleFirst) : getRandomItem(data.femaleFirst);
+        let lastName = getRandomItem(data.last);
+        let nickname = getRandomItem(data.nick);
+
+        let outputParts = [];
+
+        // 1. Name
+        if (chkName) {
+            outputParts.push(firstName);
+        }
+
+        // 2. Full Name
+        if (chkFullName) {
+            outputParts.push(`${firstName} ${lastName}`);
+        }
+
+        // 3. Nickname Format: (nick)
+        if (chkNickname) {
+            outputParts.push(`(${nickname})`);
+        }
+
+        // 4. Gender
+        if (chkGender) {
+            let genderText = selectedGender.charAt(0).toUpperCase() + selectedGender.slice(1);
+            outputParts.push(`[${genderText}]`);
+        }
+
+        let finalName = outputParts.join(" ");
+
+        document.getElementById("resultName").innerText = finalName;
+        document.getElementById("resultBox").style.display = "block";
+    }
+
+    function copyName() {
+        let text = document.getElementById("resultName").innerText;
+        navigator.clipboard.writeText(text).then(() => {
+            let notice = document.getElementById("copyNotice");
+            notice.style.display = "block";
+            setTimeout(() => { notice.style.display = "none"; }, 2000);
+        });
+    }
+
+    window.onload = function() {
+        document.getElementById("themeToggleBtn").innerText = savedTheme === "light" ? "🌙" : "☀️";
+    };
+    </script>
+</body>
+</html>
