@@ -317,7 +317,7 @@
             <div class="progress-container">
                 <div class="progress-bar" id="progressBar"></div>
             </div>
-            <div class="timer-text">Refreshes in <span id="timerText">15</span> seconds</div>
+            <div class="timer-text">Refreshes in <span id="timerText">30</span> seconds</div>
             
             <div id="copyNotice" class="toast-copied">Copied to clipboard!</div>
         </div>
@@ -362,7 +362,7 @@
                 label: "User",
                 algorithm: "SHA1",
                 digits: 6,
-                period: 15,
+                period: 30, // Updated to 30s standard
                 secret: OTPAuth.Secret.fromBase32(secretInput)
             });
 
@@ -373,10 +373,10 @@
                 document.getElementById("otpCode").innerText = code;
 
                 const now = Math.floor(Date.now() / 1000);
-                const secondsLeft = 15 - (now % 15);
+                const secondsLeft = 30 - (now % 30); // Updated to 30s standard
                 
                 document.getElementById("timerText").innerText = secondsLeft;
-                const percentage = (secondsLeft / 15) * 100;
+                const percentage = (secondsLeft / 30) * 100; // Updated to 30s standard
                 document.getElementById("progressBar").style.width = percentage + "%";
             }
 
