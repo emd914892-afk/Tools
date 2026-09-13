@@ -31,9 +31,7 @@
             --drawer-bg: #ffffff;
         }
 
-        * {
-            box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
 
         body { 
             font-family: Arial, sans-serif; 
@@ -107,9 +105,7 @@
         }
 
         .drawer-title { font-weight: bold; font-size: 16px; color: var(--highlight-color); }
-
         .drawer-menu { list-style: none; padding: 15px 0; margin: 0; }
-
         .drawer-menu li a {
             display: flex;
             align-items: center;
@@ -121,7 +117,6 @@
             font-weight: bold;
             transition: 0.2s;
         }
-
         .drawer-menu li a:hover, .drawer-menu li a.active {
             background: var(--accent-color);
             color: #ffffff;
@@ -161,12 +156,7 @@
             outline: none;
         }
 
-        .at-symbol {
-            font-weight: bold;
-            color: var(--subtext-color);
-            font-size: 14px;
-            flex-shrink: 0;
-        }
+        .at-symbol { font-weight: bold; color: var(--subtext-color); font-size: 14px; flex-shrink: 0; }
 
         .domain-input {
             flex: 1 1 45%;
@@ -180,11 +170,7 @@
             outline: none;
         }
 
-        .button-group {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
+        .button-group { display: flex; gap: 10px; margin-bottom: 15px; }
 
         .action-btn {
             flex: 1;
@@ -202,26 +188,33 @@
             gap: 8px;
             transition: 0.2s;
         }
-
         .action-btn:hover { background: var(--accent-hover); }
 
-        .inbox-header {
-            display: flex;
+        /* Extracted OTP Box */
+        .otp-box {
+            background: rgba(14, 165, 233, 0.15);
+            border: 1px solid var(--accent-color);
+            border-radius: 12px;
+            padding: 12px 15px;
+            margin-bottom: 15px;
+            display: none;
             justify-content: space-between;
             align-items: center;
-            margin: 15px 0 10px 0;
+        }
+        .otp-text { font-size: 18px; font-weight: bold; color: var(--highlight-color); letter-spacing: 2px; }
+        .copy-otp-btn {
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
         }
 
-        .inbox-title {
-            font-size: 13px;
-            font-weight: bold;
-            color: var(--highlight-color);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
+        .inbox-header { display: flex; justify-content: space-between; align-items: center; margin: 15px 0 10px 0; }
+        .inbox-title { font-size: 13px; font-weight: bold; color: var(--highlight-color); text-transform: uppercase; letter-spacing: 1px; display: flex; align-items: center; gap: 8px; }
 
         .refresh-inbox-btn {
             background: var(--box-bg);
@@ -238,10 +231,7 @@
             transition: 0.2s;
         }
 
-        .refresh-inbox-btn:hover {
-            background: var(--accent-color);
-            color: #ffffff;
-        }
+        .refresh-inbox-btn:hover { background: var(--accent-color); color: #ffffff; }
 
         .message-list {
             background: var(--box-bg);
@@ -253,15 +243,11 @@
             padding: 10px;
         }
 
-        .msg-item {
-            padding: 10px;
-            border-bottom: 1px solid var(--border-color);
-            cursor: pointer;
-        }
-
+        .msg-item { padding: 10px; border-bottom: 1px solid var(--border-color); cursor: pointer; }
         .msg-item:last-child { border-bottom: none; }
         .msg-from { font-size: 12px; color: var(--highlight-color); font-weight: bold; word-break: break-all; }
         .msg-subject { font-size: 13px; font-weight: bold; margin: 3px 0; color: var(--text-color); word-break: break-all; }
+        .otp-badge { display: inline-block; background: var(--accent-color); color: white; padding: 2px 8px; border-radius: 6px; font-size: 11px; margin-top: 4px; font-weight: bold; }
 
         .msg-body-view {
             margin-top: 15px;
@@ -314,17 +300,26 @@
 
     <div class="container">
         <h2>Temp Mail</h2>
-        <div class="subtitle">Vercel API Connected</div>
+        <div class="subtitle">VERCEL API CONNECTED</div>
         
         <div class="email-input-group">
             <input type="text" id="usernameInput" class="username-input" placeholder="Username" onchange="updateCustomMail()">
             <span class="at-symbol">@</span>
-            <input type="text" id="domainInput" class="domain-input" value="epicz.xyz" onchange="updateCustomMail()">
+            <input type="text" id="domainInput" class="domain-input" value="epicz.xyz" readonly>
         </div>
 
         <div class="button-group">
             <button class="action-btn" onclick="copyEmail()">📋 Copy Email</button>
             <button class="action-btn" onclick="createNewEmail()">🔄 New Mail</button>
+        </div>
+
+        <!-- Code Extracted OTP Display -->
+        <div class="otp-box" id="otpContainer">
+            <div>
+                <div style="font-size: 10px; color: var(--subtext-color); font-weight: bold;">CODE EXTRACTED</div>
+                <div class="otp-text" id="extractedOtp">------</div>
+            </div>
+            <button class="copy-otp-btn" onclick="copyOtp()">📋 Copy OTP</button>
         </div>
 
         <div class="inbox-header">
@@ -350,8 +345,8 @@
     <script>
         let currentUsername = "";
         let autoRefreshTimer = null;
-        
-        // Vercel Proxy Route
+        let lastExtractedOtp = "";
+
         const BASE_API = "/api/tm";
 
         function toggleTheme() {
@@ -391,6 +386,13 @@
             return result;
         }
 
+        // Helper: Extract OTP/Verification Code from Text/Subject
+        function extractCode(text) {
+            if (!text) return null;
+            const match = text.match(/\b\d{4,8}\b/);
+            return match ? match[0] : null;
+        }
+
         async function createNewEmail() {
             document.getElementById("status").innerText = "Generating...";
             try {
@@ -399,7 +401,6 @@
                 const username = data.username || data.user || getRandomString(8);
                 
                 document.getElementById("usernameInput").value = username;
-                document.getElementById("domainInput").value = "epicz.xyz";
                 currentUsername = username;
                 
                 localStorage.setItem("epicz_user", username);
@@ -407,7 +408,6 @@
             } catch (e) {
                 const fallbackUser = getRandomString(8);
                 document.getElementById("usernameInput").value = fallbackUser;
-                document.getElementById("domainInput").value = "epicz.xyz";
                 currentUsername = fallbackUser;
                 localStorage.setItem("epicz_user", fallbackUser);
                 resetInboxState();
@@ -427,7 +427,6 @@
             const savedUser = localStorage.getItem("epicz_user");
             if (savedUser) {
                 document.getElementById("usernameInput").value = savedUser;
-                document.getElementById("domainInput").value = "epicz.xyz";
                 currentUsername = savedUser;
                 resetInboxState();
             } else {
@@ -437,12 +436,13 @@
 
         function resetInboxState() {
             document.getElementById("msgContent").style.display = "none";
+            document.getElementById("otpContainer").style.display = "none";
             document.getElementById("status").innerText = "Live Checking...";
             document.getElementById("inboxList").innerHTML = `<div style="text-align: center; color: var(--subtext-color); padding-top: 60px;">No messages yet</div>`;
 
             if (autoRefreshTimer) clearInterval(autoRefreshTimer);
             checkInbox();
-            autoRefreshTimer = setInterval(checkInbox, 4000);
+            autoRefreshTimer = setInterval(checkInbox, 3000);
         }
 
         function manualCheckInbox() {
@@ -470,16 +470,31 @@
                 }
 
                 inboxList.innerHTML = "";
+                let foundOtp = null;
+
                 messages.forEach(msg => {
+                    const subject = msg.subject || 'No Subject';
+                    const code = extractCode(subject) || msg.code || null;
+                    if (code && !foundOtp) foundOtp = code;
+
                     const item = document.createElement("div");
                     item.className = "msg-item";
                     item.innerHTML = `
                         <div class="msg-from">${msg.from || msg.sender || 'Unknown'}</div>
-                        <div class="msg-subject">${msg.subject || 'No Subject'}</div>
+                        <div class="msg-subject">${subject}</div>
+                        ${code ? `<div class="otp-badge">🔑 ${code}</div>` : ''}
                     `;
                     item.onclick = () => openMessage(msg.id);
                     inboxList.appendChild(item);
                 });
+
+                // Top OTP Card Display
+                if (foundOtp) {
+                    lastExtractedOtp = foundOtp;
+                    document.getElementById("extractedOtp").innerText = foundOtp;
+                    document.getElementById("otpContainer").style.display = "flex";
+                }
+
                 document.getElementById("status").innerText = "Updated";
             } catch (e) {
                 document.getElementById("status").innerText = "Live Checking...";
@@ -490,6 +505,13 @@
             try {
                 const res = await fetch(`${BASE_API}?action=readMessage&user=${encodeURIComponent(currentUsername)}&id=${msgId}`);
                 const msg = await res.json();
+
+                const code = extractCode(msg.html) || extractCode(msg.body) || extractCode(msg.subject);
+                if (code) {
+                    lastExtractedOtp = code;
+                    document.getElementById("extractedOtp").innerText = code;
+                    document.getElementById("otpContainer").style.display = "flex";
+                }
 
                 document.getElementById("msgHeader").innerText = `From: ${msg.from || msg.sender || 'Unknown'}\nSubject: ${msg.subject || 'No Subject'}`;
                 document.getElementById("msgBody").innerHTML = msg.html || msg.body || msg.message || "No Content Available";
@@ -505,6 +527,13 @@
             if (currentUsername) {
                 navigator.clipboard.writeText(fullEmail);
                 showToast("Copied: " + fullEmail);
+            }
+        }
+
+        function copyOtp() {
+            if (lastExtractedOtp) {
+                navigator.clipboard.writeText(lastExtractedOtp);
+                showToast("OTP Copied: " + lastExtractedOtp);
             }
         }
 
