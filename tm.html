@@ -141,7 +141,6 @@
         h2 { text-align: center; color: var(--highlight-color); margin: 0 0 5px 0; font-size: 22px; font-weight: bold; }
         .subtitle { text-align: center; font-size: 11px; color: var(--subtext-color); margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px; }
 
-        /* Fix for Mail Input & Domain Screen Overflow */
         .email-input-group {
             display: flex;
             gap: 6px;
@@ -315,12 +314,12 @@
 
     <div class="container">
         <h2>Temp Mail</h2>
-        <div class="subtitle">Catchmail Free Email API</div>
+        <div class="subtitle">Vercel API Connected</div>
         
         <div class="email-input-group">
             <input type="text" id="usernameInput" class="username-input" placeholder="Username" onchange="updateCustomMail()">
             <span class="at-symbol">@</span>
-            <input type="text" id="domainInput" class="domain-input" value="catchmail.io" onchange="updateCustomMail()">
+            <input type="text" id="domainInput" class="domain-input" value="epicz.xyz" onchange="updateCustomMail()">
         </div>
 
         <div class="button-group">
@@ -349,8 +348,11 @@
     <div id="toast" class="toast">Copied to clipboard!</div>
 
     <script>
-        let currentEmail = "";
+        let currentUsername = "";
         let autoRefreshTimer = null;
+
+        // Vercel /api/tm Route Connection
+        const BASE_API = "https://tools-emon3690.vercel.app/api/tm";
 
         function toggleTheme() {
             const currentTheme = document.documentElement.getAttribute("data-theme");
@@ -389,39 +391,46 @@
             return result;
         }
 
-        function createNewEmail() {
-            const username = getRandomString(9);
-            const domain = document.getElementById("domainInput").value.trim() || "catchmail.io";
-            
-            document.getElementById("usernameInput").value = username;
-            currentEmail = `${username}@${domain}`;
-            
-            localStorage.setItem("catchmail_user", username);
-            localStorage.setItem("catchmail_domain", domain);
-
-            resetInboxState();
+        async function createNewEmail() {
+            document.getElementById("status").innerText = "Generating...";
+            try {
+                const res = await fetch(`${BASE_API}?action=genRandom`);
+                if (!res.ok) throw new Error();
+                
+                const data = await res.json();
+                const username = data.username || data.user || getRandomString(8);
+                
+                document.getElementById("usernameInput").value = username;
+                document.getElementById("domainInput").value = "epicz.xyz";
+                currentUsername = username;
+                
+                localStorage.setItem("epicz_user", username);
+                resetInboxState();
+            } catch (e) {
+                const fallbackUser = getRandomString(8);
+                document.getElementById("usernameInput").value = fallbackUser;
+                document.getElementById("domainInput").value = "epicz.xyz";
+                currentUsername = fallbackUser;
+                localStorage.setItem("epicz_user", fallbackUser);
+                resetInboxState();
+            }
         }
 
         function updateCustomMail() {
             const username = document.getElementById("usernameInput").value.trim();
-            const domain = document.getElementById("domainInput").value.trim() || "catchmail.io";
-
             if (username) {
-                currentEmail = `${username}@${domain}`;
-                localStorage.setItem("catchmail_user", username);
-                localStorage.setItem("catchmail_domain", domain);
+                currentUsername = username;
+                localStorage.setItem("epicz_user", username);
                 resetInboxState();
             }
         }
 
         function loadSavedEmail() {
-            const savedUser = localStorage.getItem("catchmail_user");
-            const savedDomain = localStorage.getItem("catchmail_domain");
-
+            const savedUser = localStorage.getItem("epicz_user");
             if (savedUser) {
                 document.getElementById("usernameInput").value = savedUser;
-                document.getElementById("domainInput").value = savedDomain || "catchmail.io";
-                currentEmail = `${savedUser}@${savedDomain || "catchmail.io"}`;
+                document.getElementById("domainInput").value = "epicz.xyz";
+                currentUsername = savedUser;
                 resetInboxState();
             } else {
                 createNewEmail();
@@ -446,18 +455,17 @@
         }
 
         async function checkInbox() {
-            if (!currentEmail) return;
+            if (!currentUsername) return;
 
             try {
-                const res = await fetch(`https://api.catchmail.io/api/v1/mailbox?address=${encodeURIComponent(currentEmail)}`);
-                
+                const res = await fetch(`${BASE_API}?action=getMessages&user=${encodeURIComponent(currentUsername)}`);
                 if (!res.ok) {
                     document.getElementById("status").innerText = "Error";
                     return;
                 }
 
                 const data = await res.json();
-                const messages = data.messages || [];
+                const messages = Array.isArray(data) ? data : (data.messages || []);
                 const inboxList = document.getElementById("inboxList");
 
                 if (messages.length === 0) {
@@ -471,8 +479,8 @@
                     const item = document.createElement("div");
                     item.className = "msg-item";
                     item.innerHTML = `
-                        <div class="msg-from">${msg.from}</div>
-                        <div class="msg-subject">${msg.subject}</div>
+                        <div class="msg-from">${msg.from || msg.sender || 'Unknown'}</div>
+                        <div class="msg-subject">${msg.subject || 'No Subject'}</div>
                     `;
                     item.onclick = () => openMessage(msg.id);
                     inboxList.appendChild(item);
@@ -485,15 +493,11 @@
 
         async function openMessage(msgId) {
             try {
-                const res = await fetch(`https://api.catchmail.io/api/v1/message/${msgId}?mailbox=${encodeURIComponent(currentEmail)}`);
+                const res = await fetch(`${BASE_API}?action=readMessage&user=${encodeURIComponent(currentUsername)}&id=${msgId}`);
                 const msg = await res.json();
 
-                document.getElementById("msgHeader").innerText = `From: ${msg.from}\nSubject: ${msg.subject}`;
-                
-                const htmlBody = msg.body?.html;
-                const textBody = msg.body?.text;
-                
-                document.getElementById("msgBody").innerHTML = htmlBody || textBody || "No Content";
+                document.getElementById("msgHeader").innerText = `From: ${msg.from || msg.sender || 'Unknown'}\nSubject: ${msg.subject || 'No Subject'}`;
+                document.getElementById("msgBody").innerHTML = msg.html || msg.body || msg.message || "No Content Available";
                 document.getElementById("msgContent").style.display = "block";
             } catch (e) {
                 showToast("Could not load message detail.");
@@ -501,9 +505,11 @@
         }
 
         function copyEmail() {
-            if (currentEmail) {
-                navigator.clipboard.writeText(currentEmail);
-                showToast("Copied: " + currentEmail);
+            const domain = document.getElementById("domainInput").value.trim() || "epicz.xyz";
+            const fullEmail = `${currentUsername}@${domain}`;
+            if (currentUsername) {
+                navigator.clipboard.writeText(fullEmail);
+                showToast("Copied: " + fullEmail);
             }
         }
 
