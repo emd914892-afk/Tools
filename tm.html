@@ -314,7 +314,7 @@
 
     <div class="container">
         <h2>Temp Mail</h2>
-        <div class="subtitle">Direct Client Service</div>
+        <div class="subtitle">Vercel API Connected</div>
         
         <div class="email-input-group">
             <input type="text" id="usernameInput" class="username-input" placeholder="Username" onchange="updateCustomMail()">
@@ -350,6 +350,9 @@
     <script>
         let currentUsername = "";
         let autoRefreshTimer = null;
+        
+        // Vercel Proxy Route
+        const BASE_API = "/api/tm";
 
         function toggleTheme() {
             const currentTheme = document.documentElement.getAttribute("data-theme");
@@ -388,17 +391,11 @@
             return result;
         }
 
-        async function apiFetch(url) {
-            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
-            const res = await fetch(proxyUrl);
-            if (!res.ok) throw new Error('Proxy network error');
-            return await res.json();
-        }
-
         async function createNewEmail() {
             document.getElementById("status").innerText = "Generating...";
             try {
-                const data = await apiFetch("https://tmpmail.epicz.xyz/api.php?action=genRandom");
+                const res = await fetch(`${BASE_API}?action=genRandom`);
+                const data = await res.json();
                 const username = data.username || data.user || getRandomString(8);
                 
                 document.getElementById("usernameInput").value = username;
@@ -459,9 +456,10 @@
             if (!currentUsername) return;
 
             try {
-                const targetUrl = `https://tmpmail.epicz.xyz/api.php?action=getMessages&user=${encodeURIComponent(currentUsername)}`;
-                const data = await apiFetch(targetUrl);
-                
+                const res = await fetch(`${BASE_API}?action=getMessages&user=${encodeURIComponent(currentUsername)}`);
+                if (!res.ok) throw new Error("API Error");
+
+                const data = await res.json();
                 const messages = Array.isArray(data) ? data : (data.messages || []);
                 const inboxList = document.getElementById("inboxList");
 
@@ -484,14 +482,14 @@
                 });
                 document.getElementById("status").innerText = "Updated";
             } catch (e) {
-                document.getElementById("status").innerText = "Checking...";
+                document.getElementById("status").innerText = "Live Checking...";
             }
         }
 
         async function openMessage(msgId) {
             try {
-                const targetUrl = `https://tmpmail.epicz.xyz/api.php?action=readMessage&user=${encodeURIComponent(currentUsername)}&id=${msgId}`;
-                const msg = await apiFetch(targetUrl);
+                const res = await fetch(`${BASE_API}?action=readMessage&user=${encodeURIComponent(currentUsername)}&id=${msgId}`);
+                const msg = await res.json();
 
                 document.getElementById("msgHeader").innerText = `From: ${msg.from || msg.sender || 'Unknown'}\nSubject: ${msg.subject || 'No Subject'}`;
                 document.getElementById("msgBody").innerHTML = msg.html || msg.body || msg.message || "No Content Available";
