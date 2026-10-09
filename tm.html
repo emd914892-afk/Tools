@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>One Web Mail Shop - Temp Mail</title>
+    <title>One Web Mail Shop - Temp Mail (mail.cx)</title>
     <style>
         :root {
             --bg-color: #0f172a;
@@ -437,13 +437,13 @@
     <!-- Main Container -->
     <div class="container">
         <h2>One Web Mail Shop</h2>
-        <div class="subtitle">Temp Mail Service</div>
+        <div class="subtitle">Temp Mail Service (Powered by mail.cx)</div>
         
         <!-- Hero Banner -->
         <div class="hero-banner">
             <span class="badge-tag">✉ DISPOSABLE EMAIL - INSTANT OTP</span>
             <div class="hero-title">Get Temp Mail Instantly</div>
-            <div class="hero-desc">Generate a free disposable address, receive verification emails, and copy OTP codes in seconds.</div>
+            <div class="hero-desc">Generate a free disposable address via mail.cx, receive verification emails, and copy OTP codes in seconds.</div>
             
             <div class="steps-pills">
                 <div class="step-pill"><span class="step-num">1</span> Create Address</div>
@@ -459,7 +459,7 @@
             <div class="domain-row">
                 <span>@</span>
                 <select id="domainSelect" class="domain-select" onchange="onUserChange()">
-                    <option value="epicz.xyz">epicz.xyz</option>
+                    <option value="mail.cx">mail.cx</option>
                 </select>
             </div>
         </div>
@@ -510,6 +510,7 @@
     const API_ENDPOINT = "/api/tm.js"; 
 
     let currentUsername = "";
+    let currentDomain = "mail.cx";
     let lastExtractedOtp = "";
     let countdown = 5;
 
@@ -569,27 +570,39 @@
         onUserChange();
     }
 
+    function getFullEmailAddress() {
+        return `${currentUsername}@${currentDomain}`;
+    }
+
     function onUserChange() {
         const inputVal = document.getElementById("usernameInput").value.trim().toLowerCase();
+        const domainVal = document.getElementById("domainSelect").value;
+        currentDomain = domainVal;
+        
         if (inputVal !== currentUsername) {
             currentUsername = inputVal;
-            localStorage.setItem("saved_epicz_user", currentUsername);
+            localStorage.setItem("saved_mailcx_user", currentUsername);
             closeModal();
             document.getElementById("otpContainer").style.display = "none";
             checkInbox();
         }
     }
 
-    // Fetch Inbox Messages
+    // Fetch Inbox Messages from Serverless Proxy (mail.cx API)
     async function checkInbox() {
         if (!currentUsername) return;
 
+        const fullAddress = getFullEmailAddress();
+
         try {
-            const res = await fetch(`${API_ENDPOINT}?action=getMessages&user=${encodeURIComponent(currentUsername)}`);
-            const messages = await res.json();
+            const res = await fetch(`${API_ENDPOINT}?action=getMessages&address=${encodeURIComponent(fullAddress)}`);
+            const data = await res.json();
             const inboxList = document.getElementById("inboxList");
 
-            if (!messages || messages.length === 0 || messages.error) {
+            // mail.cx API returns { emails: [...] } or direct array
+            const messages = data.emails || data || [];
+
+            if (!messages || messages.length === 0 || data.error) {
                 inboxList.innerHTML = `<div style="text-align: center; color: var(--subtext-color); padding-top: 45px; font-size: 13px;">No messages yet</div>`;
                 document.getElementById("otpContainer").style.display = "none";
                 return;
@@ -600,13 +613,16 @@
 
             messages.forEach(msg => {
                 const subject = msg.subject || "No Subject";
-                const code = extractOtpCode(subject);
+                const sender = msg.from_email || msg.from || 'Service';
+                const preview = msg.preview_text || '';
+                
+                const code = extractOtpCode(subject) || extractOtpCode(preview);
                 if (code && !latestCode) latestCode = code;
 
                 const item = document.createElement("div");
                 item.className = "msg-card";
                 item.innerHTML = `
-                    <div class="msg-sender">${msg.from || 'Service'}</div>
+                    <div class="msg-sender">${sender}</div>
                     <div class="msg-subject">${subject}</div>
                     ${code ? `<div class="otp-pill">🔑 OTP: ${code}</div>` : ''}
                 `;
@@ -625,13 +641,13 @@
         }
     }
 
-    // Read Message Full Content
+    // Read Message Full Content (mail.cx API Endpoint: /v1/email/<id>)
     async function readMessageDetail(id) {
         try {
-            const res = await fetch(`${API_ENDPOINT}?action=readMessage&user=${encodeURIComponent(currentUsername)}&id=${id}`);
+            const res = await fetch(`${API_ENDPOINT}?action=readMessage&id=${id}`);
             const data = await res.json();
             
-            const content = data.html || data.body || "No Body Content";
+            const content = data.html || data.text || data.body || "No Body Content";
             const code = extractOtpCode(content) || extractOtpCode(data.subject);
 
             if (code) {
@@ -651,8 +667,9 @@
     // Delete Inbox
     async function clearInboxServer() {
         if (!currentUsername) return;
+        const fullAddress = getFullEmailAddress();
         try {
-            await fetch(`${API_ENDPOINT}?action=deleteInbox&user=${encodeURIComponent(currentUsername)}`);
+            await fetch(`${API_ENDPOINT}?action=deleteInbox&address=${encodeURIComponent(fullAddress)}`);
             document.getElementById("inboxList").innerHTML = `<div style="text-align: center; color: var(--subtext-color); padding-top: 45px; font-size: 13px;">Inbox Cleared</div>`;
             document.getElementById("otpContainer").style.display = "none";
             closeModal();
@@ -665,7 +682,7 @@
     // Copy Functions
     function copyEmail() {
         if (!currentUsername) return;
-        const fullEmail = `${currentUsername}@epicz.xyz`;
+        const fullEmail = getFullEmailAddress();
         navigator.clipboard.writeText(fullEmail);
         showToast("Copied Address!");
     }
@@ -696,7 +713,7 @@
     // Page Load Setup
     window.onload = function() {
         document.getElementById("themeToggleBtn").innerText = savedTheme === "light" ? "🌙" : "☀️";
-        const saved = localStorage.getItem("saved_epicz_user");
+        const saved = localStorage.getItem("saved_mailcx_user");
         if (saved) {
             document.getElementById("usernameInput").value = saved;
             currentUsername = saved;
@@ -707,4 +724,4 @@
     };
     </script>
 </body>
-</html>
+                                           </html>
